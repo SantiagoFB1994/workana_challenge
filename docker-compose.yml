@@ -1,0 +1,38 @@
+
+services:
+  scraper:
+    build: .
+    container_name: imdb_scraper
+    depends_on:
+      - nordvpn
+    environment:
+      - PROXY_ENABLED=${PROXY_ENABLED:-true}
+      - MAX_RETRIES=${MAX_RETRIES:-3}
+      - NORDVPN_USER=${NORDVPN_USER}
+      - NORDVPN_PASSWORD=${NORDVPN_PASSWORD}
+    volumes:
+      - ./data:/app/data
+    networks:
+      - scraper_net
+    env_file:
+      - .env
+
+  nordvpn:
+    image: bubuntux/nordvpn
+    container_name: nordvpn
+    cap_add:
+      - NET_ADMIN
+    devices:
+      - /dev/net/tun
+    environment:
+      - TOKEN=${NORDVPN_TOKEN}
+      - COUNTRY=${NORDVPN_COUNTRY:-us}
+      - TECHNOLOGY=${NORDVPN_TECHNOLOGY:-nordlynx}
+      - CATEGORY=${NORDVPN_CATEGORY:-legacy_p2p}
+    restart: unless-stopped
+    networks:
+      - scraper_net
+
+networks:
+  scraper_net:
+    driver: bridge
