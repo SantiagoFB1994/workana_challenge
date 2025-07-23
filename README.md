@@ -105,25 +105,47 @@ bash
 
 ⚙️ Environment variables table
 
-| Variable                 | Default                       | Purpose                                      |
-|--------------------------|------------------------------|----------------------------------------------|
-| **Scraping**             |                              |                                              |
-| `IMDB_URL`               | (see `.env.example`)         | IMDb GraphQL endpoint URL                    |
-| `MAX_CONCURRENT_REQUESTS`| `5`                          | parallel threads                             |
-| `BATCH_SIZE`             | `1000`                       | rows per DB commit                           |
-| **Postgres**             |                              |                                              |
-| `POSTGRES_HOST`          | `localhost` / `postgres`     | DB host                                      |
-| `POSTGRES_DB`            | `imdb_db`                    | database name                                |
-| `POSTGRES_USER`          | `postgres`                   | username                                     |
-| `POSTGRES_PASSWORD`      | `postgres`                   | password                                     |
-| **CSV**                  |                              |                                              |
-| `CSV_OUTPUT_DIR`         | `data`                       | output folder                                |
-| **Proxy / VPN**          |                              |                                              |
-| `PROXY_ENABLED`          | `false`                      | turn on/off                                  |
-| `PROXY_TYPE`             | `none`                       | `nordvpn` \| `custom`                        |
-| `NORDVPN_TOKEN`          | —                            | NordVPN token                                |
-| `NORDVPN_COUNTRY`        | `us`                         | country code                                 |
-| `PROXY_1_*`, `PROXY_2_*` | —                            | custom proxy list                            |
+⚙️ Environment variables table
+
+| Variable | Default (example) | Purpose |
+|---|---|---|
+| **Scraping** |
+| `IMDB_URL` | `https://caching.graphql.imdb.com/?operationName=Top250MoviesPagination&variables={"first":250,"isInPace":false,"locale":"es-MX"}&extensions={"persistedQuery":{"sha256Hash":"2db1d515844c69836ea8dc532d5bff27684fdce990c465ebf52d36d185a187b3","version":1}}` | IMDb GraphQL endpoint + variables |
+| `MAX_RETRIES` | `3` | max retry attempts per request |
+| `MAX_CONCURRENT_REQUESTS` | `5` | parallel threads |
+| `REQUEST_TIMEOUT` | `30` | seconds before timeout |
+| `LOG_LEVEL` | `INFO` | Python logging level |
+| `BATCH_SIZE` | `1000` | rows per DB commit |
+| `VERIFY_LOCATION` | `true` | geo-check proxy IP |
+| **PostgreSQL** |
+| `POSTGRES_HOST` | `localhost` / `postgres` | DB host |
+| `POSTGRES_PORT` | `5433` | host port |
+| `POSTGRES_DB` | `imdb_db` | database name |
+| `POSTGRES_USER` | `postgres` | user |
+| `POSTGRES_PASSWORD` | `postgres` | password |
+| `POSTGRES_SCHEMA` | `public` | schema |
+| **CSV** |
+| `CSV_OUTPUT_DIR` | `data` | output folder |
+| `CSV_FILENAME_PREFIX` | `imdb_movies` | file prefix |
+| **Proxy / VPN** |
+| `PROXY_ENABLED` | `false` | enable/disable proxy |
+| `PROXY_TYPE` | `nordvpn` | `nordvpn` \| `custom` \| `both` |
+| `NORDVPN_TOKEN` | `your_nord_vpn_token` | NordVPN service token |
+| `NORDVPN_COUNTRY` | `us` | country code (`us`, `jp`, `uk`, …) |
+| `NORDVPN_TECHNOLOGY` | `nordlynx` | protocol (`nordlynx` \| `openvpn`) |
+| `NORDVPN_CATEGORY` | `legacy_p2p` | server category (`p2p`, `legacy_p2p`, `normal`) |
+| **Custom proxies** |
+| `PROXY_1_ADDRESS` | `proxy1.example.com` | proxy #1 host |
+| `PROXY_1_PORT` | `8080` | proxy #1 port |
+| `PROXY_1_USER` | *(empty)* | proxy #1 username |
+| `PROXY_1_PASSWORD` | *(empty)* | proxy #1 password |
+| `PROXY_1_PROTOCOL` | `http` | `http` \| `https` \| `socks5` |
+| `PROXY_2_ADDRESS` | `proxy2.example.com` | proxy #2 host |
+| `PROXY_2_PORT` | `3128` | proxy #2 port |
+| `PROXY_2_USER` | `user` | proxy #2 username |
+| `PROXY_2_PASSWORD` | `pass123` | proxy #2 password |
+| `PROXY_2_PROTOCOL` | `https` | proxy #2 protocol |
+
 
 🧪 Advanced SQL  
 All queries live in `queries.sql`.

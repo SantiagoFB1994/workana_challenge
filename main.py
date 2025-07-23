@@ -24,7 +24,7 @@ def main():
 
         imdb_url = os.getenv(
             'IMDB_URL',
-            'https://caching.graphql.imdb.com/?operationName=Top250MoviesPagination&variables={"first":250,"isInPace":false,"locale":"es-MX"}&extensions={"persistedQuery":{"sha256Hash":"2db1d515844c69836ea8dc532d5bff27684fdce990c465ebf52d36d185a187b3","version":1}}'
+            'https://caching.graphql.imdb.com/?operationName=Top250MoviesPagination&variables={"first":250,"isInPace":false,"locale":"en-US"}&extensions={"persistedQuery":{"sha256Hash":"2db1d515844c69836ea8dc532d5bff27684fdce990c465ebf52d36d185a187b3","version":1}}'
         )
         logger.info(f"Scraping {imdb_url}")
 
