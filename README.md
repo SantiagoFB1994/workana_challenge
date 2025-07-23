@@ -69,9 +69,9 @@ bash
 
     python main.py
 
+<pre lang="markdown"><code>
+```text
 📁 Project layout
-Copy
-
 ├── main.py                       # entry point
 ├── docker-compose.yml            # all services + optional VPN
 ├── Dockerfile                    # Python 3.12 slim
@@ -81,25 +81,27 @@ Copy
 ├── data/
 │   └── imdb_movies_example.csv   # output CSV from the scraper
 ├── factories/
-│   ├── persistence_factory.py    # factory to generate persistence clients
-│   └── scraper_factory.py        # factory to generate scraper clients
+│   ├── persistence_factory.py    # factory to generate persistence handlers
+│   └── scraper_factory.py        # factory to generate scraper adapters
 ├── logs/
 │   └── example.log               # folder containing logs
 ├── models/
 │   ├── movie_model.py            # data model for movies and actor objects
 │   └── proxy_config.py           # data model for proxies
 ├── persistence/
-│   ├── base_persistence.py       # interface to generate persistence clients
+│   ├── base_persistence.py       # persistence interface / abstraction
 │   ├── postgres_handler.py       # streaming Postgres
 │   └── csv_handler.py            # streaming CSV
 ├── scrapers/
-│   ├── base_scraper.py           # interface to generate scraper clients
+│   ├── base_scraper.py           # scraper interface / abstraction
 │   └── imdb.py                   # IMDb GraphQL scraper
 ├── utils/
 │   ├── logging_config.py         # rotating file & console logs
 │   ├── proxy_handler.py          # NordVPN / custom proxy logic
 │   └── request_handler.py        # handler for requests
 └── data/                         # CSV output (empty folder)
+```
+</code></pre>
 
 ⚙️ Environment variables
 Table
