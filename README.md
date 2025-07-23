@@ -103,26 +103,30 @@ bash
 ```
 </code></pre>
 
-⚙️ Environment variables
-Table
-Copy
-Variable	Default	Purpose
-Scraping
-IMDB_URL	IMDb GraphQL endpoint	target URL
-MAX_CONCURRENT_REQUESTS	5	parallel threads
-BATCH_SIZE	1000	rows per DB commit
-Postgres
-POSTGRES_HOST	localhost / postgres	DB host
-POSTGRES_DB, USER, PASSWORD	imdb_db, postgres, postgres	credentials
-CSV
-CSV_OUTPUT_DIR	data	folder for files
-Proxy / VPN
-PROXY_ENABLED	false	turn on/off
-PROXY_TYPE	none	nordvpn | custom
-NORDVPN_TOKEN, NORDVPN_COUNTRY, …	—	NordVPN settings
-PROXY_1_*, PROXY_2_*	—	custom proxy list
-🧪 Advanced SQL
-All queries live in sql/queries.sql:
+⚙️ Environment variables table
+
+| Variable                 | Default                       | Purpose                                      |
+|--------------------------|------------------------------|----------------------------------------------|
+| **Scraping**             |                              |                                              |
+| `IMDB_URL`               | (see `.env.example`)         | IMDb GraphQL endpoint URL                    |
+| `MAX_CONCURRENT_REQUESTS`| `5`                          | parallel threads                             |
+| `BATCH_SIZE`             | `1000`                       | rows per DB commit                           |
+| **Postgres**             |                              |                                              |
+| `POSTGRES_HOST`          | `localhost` / `postgres`     | DB host                                      |
+| `POSTGRES_DB`            | `imdb_db`                    | database name                                |
+| `POSTGRES_USER`          | `postgres`                   | username                                     |
+| `POSTGRES_PASSWORD`      | `postgres`                   | password                                     |
+| **CSV**                  |                              |                                              |
+| `CSV_OUTPUT_DIR`         | `data`                       | output folder                                |
+| **Proxy / VPN**          |                              |                                              |
+| `PROXY_ENABLED`          | `false`                      | turn on/off                                  |
+| `PROXY_TYPE`             | `none`                       | `nordvpn` \| `custom`                        |
+| `NORDVPN_TOKEN`          | —                            | NordVPN token                                |
+| `NORDVPN_COUNTRY`        | `us`                         | country code                                 |
+| `PROXY_1_*`, `PROXY_2_*` | —                            | custom proxy list                            |
+
+🧪 Advanced SQL  
+All queries live in `queries.sql`.
 
     5 longest movies per decade
     Standard deviation of ratings per year
