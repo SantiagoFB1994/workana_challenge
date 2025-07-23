@@ -15,7 +15,7 @@ class Movie:
     rating: float
     duration: int
     actors: List[Actor]
-    metascore: Optional[float] = None
+    metascore: Optional[int] = None
 
     def to_dict(self):
         return {

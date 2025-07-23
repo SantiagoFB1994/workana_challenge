@@ -1,66 +1,67 @@
 import csv
-import os
-from typing import List
+from pathlib import Path
 from datetime import datetime
-from models.movie_model import Movie
+from typing import Iterator
+
+from models.movie_model import Movie, Actor
 from .base_persistence import BasePersistence
 
+
 class CSVHandler(BasePersistence):
-    def __init__(self, output_dir: str = "data"):
-        self.output_dir = output_dir
-        os.makedirs(self.output_dir, exist_ok=True)
-        self.filename = os.path.join(
-            self.output_dir,
-            f"imdb_movies_{datetime.now().strftime('%Y%m%d_%H%M%S')}.csv"
-        )
-        self._write_header = not os.path.exists(self.filename)
+    """
+    Stream movies to CSV, one per line.
+    """
 
-    def save_movie(self, movie: Movie) -> bool:
-        """Save a movie to CSV"""
-        try:
-            with open(self.filename, mode='a', newline='', encoding='utf-8') as file:
-                writer = csv.DictWriter(file, fieldnames=self._get_fieldnames())
-                
-                if self._write_header:
-                    writer.writeheader()
-                    self._write_header = False
-                
-                writer.writerow(self._movie_to_row(movie))
-            return True
-        except Exception as e:
-            print(f"Error saving to CSV: {str(e)}")
-            return False
+    def __init__(self, output_dir: str = "data") -> None:
+        self.output_dir = Path(output_dir)
+        self.output_dir.mkdir(parents=True, exist_ok=True)
+        self.filename = self.output_dir / f"imdb_movies_{datetime.now():%Y%m%d_%H%M%S}.csv"
 
-    def save_bulk_movies(self, movies: List[Movie]) -> bool:
-        """Save multiple movies to CSV"""
-        try:
-            with open(self.filename, mode='a', newline='', encoding='utf-8') as file:
-                writer = csv.DictWriter(file, fieldnames=self._get_fieldnames())
-                
-                if self._write_header:
-                    writer.writeheader()
-                    self._write_header = False
-                
-                for movie in movies:
-                    writer.writerow(self._movie_to_row(movie))
-            return True
-        except Exception as e:
-            print(f"Error duting bulk save CSV: {str(e)}")
-            return False
+    # ------------------------------------------------------------------
+    # streaming save
+    # ------------------------------------------------------------------
+    def save_stream(self, movies: Iterator[Movie], batch_size: int = 1_000) -> int:
+        """
+        Persist an iterator of Movie objects to CSV.
+        Returns the total number of rows written.
+        """
+        fieldnames = ["movie_id", "title", "year", "rating", "duration", "metascore", "actors"]
+        written = 0
 
-    def _movie_to_row(self, movie: Movie) -> dict:
-        """Convert movie objent to dict for CSV"""
-        row = movie.to_dict()
-        row['actors'] = '|'.join(row['actors'])
-        return row
+        with self.filename.open("w", newline="", encoding="utf-8") as file:
+            writer = csv.DictWriter(file, fieldnames=fieldnames)
+            writer.writeheader()
 
-    def _get_fieldnames(self) -> list:
-        return ['title', 'year', 'rating', 'duration', 'metascore', 'actors']
+            buf: list[Movie] = []
+            for movie in movies:
+                buf.append(movie)
+                if len(buf) >= batch_size:
+                    writer.writerows(self._rows_from_buffer(buf))
+                    written += len(buf)
+                    buf.clear()
 
-    def get_movies_by_year(self, year: int) -> List[Movie]:
-        """Not implemented for CSV"""
-        raise NotImplementedError("CSV does not support searches by year for movies")
+            if buf:  # tail
+                writer.writerows(self._rows_from_buffer(buf))
+                written += len(buf)
 
-    def close(self):
-        """No resources to be liberated"""
+        return written
+
+    def _rows_from_buffer(self, buf: list[Movie]) -> list[dict]:
+        return [
+            {
+                "movie_id": m.movie_id,
+                "title": m.title,
+                "year": m.year,
+                "rating": m.rating,
+                "duration": m.duration,
+                "metascore": m.metascore,
+                "actors": "|".join(a.actor_id for a in m.actors),
+            }
+            for m in buf
+        ]
+
+    def get_movies_by_year(self, year: int) -> Iterator[Movie]:
+        raise NotImplementedError("CSV does not support queries")
+
+    def close(self) -> None:
         pass

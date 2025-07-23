@@ -1,32 +1,29 @@
-from typing import Type
 from scrapers.base_scraper import BaseScraper
-from utils.request_handler import RequestHandler
 from scrapers.imdb import IMDBScraper
+from typing import Any
 
 class ScraperFactory:
-    """Factory to create scraper instances acording to website"""
-    
     @staticmethod
-    def create_scraper(site: str, request_handler: RequestHandler) -> Type[BaseScraper]:
-        """
-        Create an instance of the scraper for the specified site
-        
-        Args:
-            site: Site identifier ('imdb', 'rottentomatoes', etc.)
-            
-        Returns:
-            Scraper instance
-            
-        Raises:
-            ValueError: if site is not supported
-        """
+    def create_scraper(
+        site: str,
+        request_handler: Any = None,
+        **kwargs
+    ) -> BaseScraper:
         scrapers = {
             'imdb': IMDBScraper,
-            # More scrapers can be added in the future
             # 'rottentomatoes': RottenTomatoesScraper,
         }
-        
-        if site.lower() not in scrapers:
-            raise ValueError(f"Site not supported: {site}. Available options: {list(scrapers.keys())}")
-            
-        return scrapers[site.lower()]()
+
+        site = site.lower()
+        if site not in scrapers:
+            raise ValueError(
+                f"Site not supported: {site}. "
+                f"Available options: {list(scrapers.keys())}"
+            )
+
+        # Instantiate and inject dependencies
+        scraper_cls = scrapers[site]
+        return scraper_cls(
+            request_handler=request_handler,
+            **kwargs
+        )

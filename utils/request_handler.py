@@ -3,11 +3,12 @@ import time
 import os
 from curl_cffi import requests
 from typing import Dict, Optional
+from utils.logging_config import setup_logger
 from .proxy_handler import ProxyHandler
 
 class RequestHandler:
     def __init__(self, proxy_handler: Optional[ProxyHandler] = None):
-        self.logger = logging.getLogger(f"{__name__}.{self.__class__.__name__}")
+        self.logger = setup_logger(__name__)
         self.proxy_handler = proxy_handler
 
     def _get_request_params(self, headers, use_proxy: bool = True) -> Dict:
@@ -48,6 +49,7 @@ class RequestHandler:
                 self.logger.debug(f"Attempt {attempt + 1} for {url}")
 
                 response = requests.get(url, **params)
+                self.logger.info(f"GET - {response.status_code} - {url}")
                 response.raise_for_status()
                 
                 # Additional validation

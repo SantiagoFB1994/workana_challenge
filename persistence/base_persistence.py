@@ -1,24 +1,28 @@
 from abc import ABC, abstractmethod
-from typing import List
+from typing import Iterator
+
 from models.movie_model import Movie
 
+
 class BasePersistence(ABC):
+    """
+    persistence interface.
+    """
+
     @abstractmethod
-    def save_movie(self, movie: Movie) -> bool:
-        """Save movie into storage"""
+    def save_stream(self, movies: Iterator[Movie], batch_size: int = 1_000) -> int:
+        """
+        Persist an iterator of Movie objects in batches.
+        Returns the total number of rows/objects written.
+        """
         pass
-    
+
     @abstractmethod
-    def save_bulk_movies(self, movies: List[Movie]) -> bool:
-        """Save multiple movies to storage"""
+    def get_movies_by_year(self, year: int) -> Iterator[Movie]:
+        """Fetch movies for the given year."""
         pass
-    
+
     @abstractmethod
-    def get_movies_by_year(self, year: int) -> List[Movie]:
-        """Fetches movies by year"""
-        pass
-    
-    @abstractmethod
-    def close(self):
-        """Close connections/files"""
+    def close(self) -> None:
+        """Release any open resources (DB connections, file handles, etc.)."""
         pass

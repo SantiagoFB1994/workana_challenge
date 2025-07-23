@@ -1,14 +1,18 @@
 import os
 import json
 from bs4 import BeautifulSoup
-from utils.request_handler import RequestHandler
-from typing import Dict, List
+from typing import Dict, Iterator
+from concurrent.futures import ThreadPoolExecutor, as_completed
+from utils.logging_config import setup_logger
 from .base_scraper import BaseScraper
+from utils.request_handler import RequestHandler
 from models.movie_model import Movie, Actor
 
 class IMDBScraper(BaseScraper):
-    def __init__(self):
+    def __init__(self, request_handler=None):
         super().__init__()
+        self.logger = setup_logger(__name__)
+        self.request_handler = request_handler or RequestHandler()
         self.max_retries = os.getenv("MAX_RETRIES", 3)
         self.headers = {
             'User-Agent': 'Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:140.0) Gecko/20100101 Firefox/140.0',
@@ -40,68 +44,110 @@ class IMDBScraper(BaseScraper):
             "Sec-Fetch-Mode": "cors",
             "Sec-Fetch-Site": ""
         }
-        self.http_client = RequestHandler()
 
-    def extract_data(self, url: str, use_proxy: bool, verify_proxy: bool) -> List[Dict]:
-        """Extract titles from IMDB chart"""
+    def extract_data(
+        self,
+        url: str,
+        use_proxy: bool = False,
+        verify_proxy: bool = False,
+    ) -> Iterator[Movie]:
+        """
+        Stream top-250 titles from the IMDB chart.
+        Yields Movie objects one at a time.
+        """
         self.logger.info(f"Scraping URL: {url}")
-        
+
         try:
-            response = self.http_client.get(url, headers=self.api_headers, use_proxy=use_proxy, verify_proxy=verify_proxy)
-            resp_json = response.json()
-            
-            movies = []
-            for movie in resp_json["data"]["chartTitles"]["edges"]:
-                movies.append(f"https://www.imdb.com/title/{movie['node']['id']}")
-            
-            return movies            
+            response = self.request_handler.get(
+                url,
+                headers=self.api_headers,
+                use_proxy=use_proxy,
+                verify_proxy=verify_proxy,
+            )
+            edges = response.json()["data"]["chartTitles"]["edges"]
         except Exception as e:
-            self.logger.error(f"Error al scrapear {url}: {str(e)}", exc_info=True)
+            self.logger.error(f"Failed to fetch chart at {url}: {e}", exc_info=True)
             raise
 
-    def _parse_movie_details(self, row) -> Dict:
+        def _parse_node(movie_node: Dict) -> Movie:
+            imdb_id = movie_node["node"]["id"]
+            movie_url = f"https://www.imdb.com/title/{imdb_id}"
+            movie = self._parse_movie_details(
+                movie_url,
+                use_proxy=use_proxy,
+                verify_proxy=verify_proxy,
+            )
+            return movie
+
+        max_workers = int(os.getenv("MAX_CONCURRENT_REQUESTS", "5"))
+        with ThreadPoolExecutor(max_workers=max_workers) as executor:
+            future_to_node = {
+                executor.submit(_parse_node, edge): edge
+                for edge in edges
+            }
+
+            for future in as_completed(future_to_node):
+                try:
+                    yield future.result()
+                except Exception as e:
+                    node = future_to_node[future]
+                    self.logger.error(
+                        f"Error parsing {node['node']['id']}: {e}", exc_info=True
+                    )
+                    continue
+
+    def _parse_movie_details(self, detail_url: dict, use_proxy: bool, verify_proxy: bool) -> Dict:
         """Extrae datos de una fila de película"""
-        title = row.find('h3').get_text(strip=True)
-        year = row.find('span', class_='cli-title-metadata-item').get_text(strip=True)
-        rating = row.find('span', class_='rating-group--imdb-rating').get_text(strip=True).split()[0]
-        
-        # Obtener URL de detalles para información adicional
-        detail_url = "https://www.imdb.com" + row.find('a')['href']
-        details = self._get_movie_details(detail_url)
-        
-        return {
-            'title': title,
-            'year': year,
-            'rating': float(rating),
-            'duration': details.get('duration'),
-            'metascore': details.get('metascore'),
-            'actors': details.get('actors', [])
-        }
+        json_data = self._get_movie_details(detail_url, use_proxy, verify_proxy)
+        try:
+            movie_details = json_data["props"]["pageProps"]["mainColumnData"]
+            _id = movie_details["id"]
+            runtime = movie_details["runtime"]["seconds"]
+            release_year = movie_details["releaseDate"]["year"]
+            title = movie_details["originalTitleText"]["text"]
+            rating = movie_details["ratingsSummary"]["aggregateRating"]
+            metascore = self.safe_get(json_data, "props", "pageProps", "aboveTheFoldData", "metacritic", "metascore", "score") 
+            actors = self._parse_actors(movie_details, _id)
+            return Movie(
+                movie_id=_id,
+                title=title,
+                year=release_year,
+                rating=rating,
+                duration=runtime // 60,
+                actors=actors,
+                metascore=metascore
+            )
+        except Exception as e:
+            self.logger.error(f"Error parsing {detail_url} details {e}")
 
     def _get_movie_details(self, url: str, use_proxy: bool, verify_proxy: bool) -> Dict:
-        """Obtiene detalles adicionales de la página de la película"""
+        """Obtain aditional movie details"""
         try:
-            response = self.http_client.get(url, headers=self.api_headers, use_proxy=use_proxy, verify_proxy=verify_proxy)
+            response = self.request_handler.get(url, headers=self.api_headers, use_proxy=use_proxy, verify_proxy=verify_proxy)
             soup = BeautifulSoup(response.text, 'html.parser')
             json_data = json.loads(soup.find("script", {"id":"__NEXT_DATA__"}).contents[0])
-            return {
-                'duration': self._parse_duration(soup),
-                'metascore': self._parse_metascore(soup),
-                'actors': self._parse_actors(soup)
-            }
+            return json_data
         except Exception as e:
-            self.logger.warning(f"Error obteniendo detalles: {str(e)}")
-            return {}
+            self.logger.warning(f"Error getting details for {url}: {str(e)}")
 
-    # Métodos auxiliares para parsear detalles específicos...
-    def _parse_duration(self, soup):
-        # Implementación específica
-        pass
-        
-    def _parse_metascore(self, soup):
-        # Implementación específica
-        pass
-        
-    def _parse_actors(self, soup):
-        # Implementación específica
-        pass
+    def _parse_actors(self, movie_details: dict, movie_id: str) -> list[Actor]:
+        actors = list()
+        for actor in movie_details["cast"]["edges"]:
+            actor_data = actor["node"]["name"]
+            actors.append(
+                Actor(
+                    name=actor_data["nameText"]["text"],
+                    movie_id=movie_id,
+                    actor_id=actor_data["id"]
+                )
+            )
+        return actors
+
+    @staticmethod
+    def safe_get(mapping, *keys):
+        for k in keys:
+            if not isinstance(mapping, dict):
+                return None
+            mapping = mapping.get(k)
+        return mapping
+

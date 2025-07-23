@@ -1,11 +1,7 @@
 from abc import ABC, abstractmethod
-import logging
 from typing import Dict
 
 class BaseScraper(ABC):
-    def __init__(self):
-        self.logger = logging.getLogger(f"{__name__}.{self.__class__.__name__}")
-
     @abstractmethod
     def extract_data(self, url: str) -> Dict:
         """Main method for data extraction"""
