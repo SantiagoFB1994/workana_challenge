@@ -13,11 +13,16 @@ Features
 
 Scraping approach / technical decisions
 
-    Found an API endpoint for the top 250 chart wich returned the first 125 titles with pagination, modifiying the query on the endpoint
-    i got to fetch all the 250 titles in a single request, then i proceeded to scrape all the movie details for each title via request + bs4 using the
+    Found an API endpoint for the top 250 chart wich returned the first 125 titles with pagination, 
+    modifiying the query on the endpoint i got to fetch all the 250 titles in a single request, 
+    then i proceeded to scrape all the movie details for each title via request + bs4 using the
     json found in the __NEXT_DATA__ field present in the HTML.
-    During my tests no proxy/ip rotation was needed since the volume of request was low but the functionality is there if needed.
-    This could also be achieved using Selenium/Playwright by getting the chart url and fetching the movie ids from the source of the page to then iterate over the detail page of each movie, but compared to the requests approach it woud be significantly slower and more resource intensive
+    During my tests no proxy/ip rotation was needed since the volume of request was low,
+    but the functionality is there if needed.
+    This could also be achieved using Selenium/Playwright by getting the chart url 
+    and fetching the movie ids from the source of the page to then 
+    iterate over the detail page of each movie, but compared to the requests approach 
+    it woud be significantly slower and more resource intensive
 
 🏁 Quick start (Docker)
 bash
