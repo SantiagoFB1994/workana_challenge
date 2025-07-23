@@ -72,34 +72,34 @@ bash
 📁 Project layout
 Copy
 
-├── main.py                 # entry point
-├── docker-compose.yml      # all services + optional VPN
-├── Dockerfile              # Python 3.12 slim
-├── queries.sql             # advanced SQL queries
-├── .env.example            # template with every config
-├── requirements.txt        # dependencies for the project
+├── main.py                       # entry point
+├── docker-compose.yml            # all services + optional VPN
+├── Dockerfile                    # Python 3.12 slim
+├── queries.sql                   # advanced SQL queries
+├── .env.example                  # template with every config
+├── requirements.txt              # dependencies for the project
 ├── data/
-│   ├── imdb_movies_example.csv # Output csv from the scraper
+│   └── imdb_movies_example.csv   # output CSV from the scraper
 ├── factories/
-│   ├── persistence_factory.py  # Factory to generate persistence clients
-│   └── scraper_factory.py      # Factory to generate scraper clients
+│   ├── persistence_factory.py    # factory to generate persistence clients
+│   └── scraper_factory.py        # factory to generate scraper clients
 ├── logs/
-│   └── example.log         # Folder containing logs
+│   └── example.log               # folder containing logs
 ├── models/
-│   ├── movie_model.py      # Data model for movies and actor objects
-│   └── proxy_config.py     # Data model for proxies
+│   ├── movie_model.py            # data model for movies and actor objects
+│   └── proxy_config.py           # data model for proxies
 ├── persistence/
-│   └──base_persistence.py  # interface to generate persistence clients   
-│   └── postgres_handler.py # streaming Postgres
-│   └── csv_handler.py      # streaming CSV
+│   ├── base_persistence.py       # interface to generate persistence clients
+│   ├── postgres_handler.py       # streaming Postgres
+│   └── csv_handler.py            # streaming CSV
 ├── scrapers/
-│   └── base_scraper.py     # interface to generate scraper clients
-│   └── imdb.py             # IMDbGraphQL scraper
+│   ├── base_scraper.py           # interface to generate scraper clients
+│   └── imdb.py                   # IMDb GraphQL scraper
 ├── utils/
-│   ├── logging_config.py   # rotating file & console logs
-│   └── proxy_handler.py    # NordVPN / custom proxy logic
-│   └── request_handler.py  # Handler for requests
-└── data/                   # CSV output
+│   ├── logging_config.py         # rotating file & console logs
+│   ├── proxy_handler.py          # NordVPN / custom proxy logic
+│   └── request_handler.py        # handler for requests
+└── data/                         # CSV output (empty folder)
 
 ⚙️ Environment variables
 Table
