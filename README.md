@@ -39,6 +39,7 @@ cp .env.example .env          # edit values as needed
 docker compose up --build     # no VPN
 #   or
 docker compose --profile vpn up --build  # with NordVPN
+Take into acount that a NordVPN token is needed for this approach, you should add it to the .env
 
 The first build will create PostgreSQL and the scraper containers automatically.
 🔧 Local run (no Docker)
