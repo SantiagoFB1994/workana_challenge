@@ -1,21 +1,24 @@
 import os
-import logging
 import psycopg2
 from psycopg2.extras import execute_batch
+from psycopg2.extensions import ISOLATION_LEVEL_AUTOCOMMIT
 from typing import Iterator
 
-from models.movie_model import Movie, Actor, List
+from models.movie_model import Movie, Actor
 from .base_persistence import BasePersistence
 
+import logging
 logger = logging.getLogger(__name__)
 
 
 class PostgresHandler(BasePersistence):
     """
-    Streaming-only persistence that uses the **IMDb ID** as the primary key.
+    Streaming-only persistence that auto-creates the DB if missing
+    and uses the IMDb ID as the primary key.
     """
 
     def __init__(self) -> None:
+        self._ensure_database_exists()
         self.conn = psycopg2.connect(
             dbname=os.getenv("POSTGRES_DB", "imdb_db"),
             user=os.getenv("POSTGRES_USER", "postgres"),
@@ -24,6 +27,24 @@ class PostgresHandler(BasePersistence):
             port=os.getenv("POSTGRES_PORT", "5432"),
         )
         self._initialize_schema()
+
+    def _ensure_database_exists(self) -> None:
+        """Create the target DB if it does not yet exist."""
+        conn = psycopg2.connect(
+            dbname="postgres",
+            user=os.getenv("POSTGRES_USER", "postgres"),
+            password=os.getenv("POSTGRES_PASSWORD", "postgres"),
+            host=os.getenv("POSTGRES_HOST", "localhost"),
+            port=os.getenv("POSTGRES_PORT", "5432"),
+        )
+        conn.set_isolation_level(ISOLATION_LEVEL_AUTOCOMMIT)
+        cur = conn.cursor()
+        db_name = os.getenv("POSTGRES_DB", "imdb_db")
+        cur.execute("SELECT 1 FROM pg_database WHERE datname=%s", (db_name,))
+        if not cur.fetchone():
+            cur.execute(f'CREATE DATABASE "{db_name}"')
+        cur.close()
+        conn.close()
 
     def _initialize_schema(self) -> None:
         with self.conn.cursor() as cur:
@@ -74,7 +95,7 @@ class PostgresHandler(BasePersistence):
             cur.close()
 
     def _flush_batch(self, cur, buf: list[Movie]) -> None:
-        # 1. movies
+        # movies
         movie_rows = [(m.movie_id, m.title, m.year, m.rating, m.duration, m.metascore) for m in buf]
         execute_batch(
             cur,
@@ -86,7 +107,7 @@ class PostgresHandler(BasePersistence):
             movie_rows,
         )
 
-        # 2. actors
+        # actors
         actor_rows = [
             (m.movie_id, a.actor_id, a.name)
             for m in buf
@@ -104,44 +125,7 @@ class PostgresHandler(BasePersistence):
             )
         self.conn.commit()
 
-
-    def get_movies_by_year(self, year: int) -> List[Movie]:
-        """Fetch movies by year"""
-        try:
-            with self.conn.cursor() as cur:
-                cur.execute(
-                    """
-                    SELECT m.movie_id, m.title, m.year, m.rating, m.duration, m.metascore,
-                           array_agg(a.name) as actors
-                    FROM movies m
-                    LEFT JOIN actors a ON m.movie_id = a.movie_id
-                    WHERE m.year = %s
-                    GROUP BY m.movie_id
-                    """,
-                    (year,)
-                )
-                
-                movies = []
-                for row in cur.fetchall():
-                    movie = Movie(
-                        movie_id=row[0],
-                        title=row[1],
-                        year=row[2],
-                        rating=row[3],
-                        duration=row[4],
-                        metascore=row[5],
-                        actors=[Actor(name=name) for name in (row[6] if row[6] else [])]
-                    )
-                    movies.append(movie)
-                
-                return movies
-                
-        except Exception as e:
-            self.logger.error(f"Error getting movies: {str(e)}")
-            return []
-
-    def close(self):
-        """Close connection with PostgreSQL"""
+    def close(self) -> None:
         if self.conn:
             self.conn.close()
-            self.logger.info("PostgreSQL connection closed")
+            logger.info("PostgreSQL connection closed")

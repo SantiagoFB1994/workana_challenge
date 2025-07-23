@@ -1,44 +1,52 @@
 import logging
+import os
 from logging.handlers import RotatingFileHandler
 import sys
 from pathlib import Path
 from datetime import datetime
 
-def setup_logger(name='imdb_scraper'):
+_LEVEL_MAP = {
+    "DEBUG": logging.DEBUG,
+    "INFO": logging.INFO,
+    "WARNING": logging.WARNING,
+    "ERROR": logging.ERROR,
+    "CRITICAL": logging.CRITICAL,
+}
+
+def setup_logger(name: str = "imdb_scraper") -> logging.Logger:
     """
-    Compact logger config:
-    - Console output (INFO+)
-    - Rotating file handler output (DEBUG+)
+    Configure a logger whose level is controlled by the env variable LOG_LEVEL
+    (default = INFO).  Console uses the same level; file always logs DEBUG+.
     """
-    
-    # Log directory
-    log_dir = Path(__file__).parent.parent / 'logs'
-    log_dir.mkdir(exist_ok=True)
+    log_level = _LEVEL_MAP.get(os.getenv("LOG_LEVEL", "INFO").upper(), logging.INFO)
+
+    log_dir = Path(__file__).parent.parent / "logs"
+    log_dir.mkdir(parents=True, exist_ok=True)
 
     logger = logging.getLogger(name)
-    logger.setLevel(logging.DEBUG)
-    
-    # Avoid duplicate handlers
+    logger.setLevel(log_level)
+
+    # Prevent duplicate handlers
     if logger.handlers:
         return logger
 
     formatter = logging.Formatter(
-        '%(asctime)s | %(name)s | %(levelname)-8s | %(message)s',
-        datefmt='%Y-%m-%d %H:%M:%S'
+        "%(asctime)s | %(name)s | %(levelname)-8s | %(message)s",
+        datefmt="%Y-%m-%d %H:%M:%S",
     )
 
-    # Console handler
+    # Console (same level as env)
     console_handler = logging.StreamHandler(sys.stdout)
-    console_handler.setLevel(logging.INFO)
+    console_handler.setLevel(log_level)
     console_handler.setFormatter(formatter)
 
-    # File handler (DEBUG +)
-    log_file = log_dir / f'{name}_{datetime.now().strftime("%Y%m%d")}.log'
+    # Rotating file (always DEBUG so nothing is lost)
+    log_file = log_dir / f"{name}_{datetime.now():%Y%m%d}.log"
     file_handler = RotatingFileHandler(
         filename=log_file,
-        maxBytes=5*1024*1024,
-        backupCount=3,  
-        encoding='utf-8'
+        maxBytes=5 * 1024 * 1024,
+        backupCount=3,
+        encoding="utf-8",
     )
     file_handler.setLevel(logging.DEBUG)
     file_handler.setFormatter(formatter)
@@ -46,6 +54,7 @@ def setup_logger(name='imdb_scraper'):
     logger.addHandler(console_handler)
     logger.addHandler(file_handler)
 
-    logging.getLogger('urllib3').setLevel(logging.WARNING)
-    
+    # Silence noisy libraries
+    logging.getLogger("urllib3").setLevel(logging.WARNING)
+
     return logger

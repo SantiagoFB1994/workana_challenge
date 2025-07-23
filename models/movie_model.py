@@ -24,5 +24,5 @@ class Movie:
             'rating': self.rating,
             'duration': self.duration,
             'metascore': self.metascore,
-            'actors': [actor.name for actor in self.actors] if self.actors else []
+            'actors': [{"name":actor.name, "actor_id":actor.actor_id} for actor in self.actors] if self.actors else []
         }

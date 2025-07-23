@@ -55,7 +55,7 @@ class CSVHandler(BasePersistence):
                 "rating": m.rating,
                 "duration": m.duration,
                 "metascore": m.metascore,
-                "actors": "|".join(a.actor_id for a in m.actors),
+                "actors": "|".join(f"{a.actor_id}:{a.name}" for a in m.actors),
             }
             for m in buf
         ]

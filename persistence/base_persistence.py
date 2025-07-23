@@ -18,11 +18,6 @@ class BasePersistence(ABC):
         pass
 
     @abstractmethod
-    def get_movies_by_year(self, year: int) -> Iterator[Movie]:
-        """Fetch movies for the given year."""
-        pass
-
-    @abstractmethod
     def close(self) -> None:
         """Release any open resources (DB connections, file handles, etc.)."""
         pass

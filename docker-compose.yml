@@ -1,15 +1,68 @@
 
 services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: imdb_postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB:       ${POSTGRES_DB:-imdb_db}
+      POSTGRES_USER:     ${POSTGRES_USER:-postgres}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-postgres}
+    ports:
+      - "${POSTGRES_PORT:-5433}:5432"   # host:5433 → container:5432
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    networks:
+      - scraper_net
+
   scraper:
     build: .
     container_name: imdb_scraper
     depends_on:
-      - nordvpn
+      - postgres
     environment:
-      - PROXY_ENABLED=${PROXY_ENABLED:-true}
-      - MAX_RETRIES=${MAX_RETRIES:-3}
-      - NORDVPN_USER=${NORDVPN_USER}
-      - NORDVPN_PASSWORD=${NORDVPN_PASSWORD}
+      # --- scraping
+      IMDB_URL: ${IMDB_URL}
+      MAX_RETRIES: ${MAX_RETRIES:-3}
+      MAX_CONCURRENT_REQUESTS: ${MAX_CONCURRENT_REQUESTS:-5}
+      REQUEST_TIMEOUT: ${REQUEST_TIMEOUT:-30}
+      LOG_LEVEL: ${LOG_LEVEL:-INFO}
+      BATCH_SIZE: ${BATCH_SIZE:-1000}
+
+      # --- persistence
+      POSTGRES_HOST: postgres
+      POSTGRES_PORT: 5432         # ← always 5432 inside the network
+      POSTGRES_DB: ${POSTGRES_DB:-imdb_db}
+      POSTGRES_USER: ${POSTGRES_USER:-postgres}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-postgres}
+      POSTGRES_SCHEMA: ${POSTGRES_SCHEMA:-public}
+
+      CSV_OUTPUT_DIR: ${CSV_OUTPUT_DIR:-data}
+      CSV_FILENAME_PREFIX: ${CSV_FILENAME_PREFIX:-imdb_movies}
+
+      # --- proxy / vpn
+      PROXY_ENABLED: ${PROXY_ENABLED:-false}
+      PROXY_TYPE: ${PROXY_TYPE:-none}
+
+      # NordVPN config (only used when PROXY_TYPE=nordvpn)
+      NORDVPN_TOKEN: ${NORDVPN_TOKEN:-}
+      NORDVPN_COUNTRY: ${NORDVPN_COUNTRY:-us}
+      NORDVPN_TECHNOLOGY: ${NORDVPN_TECHNOLOGY:-nordlynx}
+      NORDVPN_CATEGORY: ${NORDVPN_CATEGORY:-legacy_p2p}
+
+      # Custom proxies (ignored unless PROXY_TYPE=custom)
+      PROXY_1_ADDRESS: ${PROXY_1_ADDRESS:-}
+      PROXY_1_PORT: ${PROXY_1_PORT:-}
+      PROXY_1_USER: ${PROXY_1_USER:-}
+      PROXY_1_PASSWORD: ${PROXY_1_PASSWORD:-}
+      PROXY_1_PROTOCOL: ${PROXY_1_PROTOCOL:-http}
+
+      PROXY_2_ADDRESS: ${PROXY_2_ADDRESS:-}
+      PROXY_2_PORT: ${PROXY_2_PORT:-}
+      PROXY_2_USER: ${PROXY_2_USER:-}
+      PROXY_2_PASSWORD: ${PROXY_2_PASSWORD:-}
+      PROXY_2_PROTOCOL: ${PROXY_2_PROTOCOL:-https}
+
     volumes:
       - ./data:/app/data
     networks:
@@ -17,22 +70,28 @@ services:
     env_file:
       - .env
 
+  # NordVPN service – only included when PROXY_TYPE=nordvpn
   nordvpn:
     image: bubuntux/nordvpn
     container_name: nordvpn
+    restart: unless-stopped
     cap_add:
       - NET_ADMIN
     devices:
       - /dev/net/tun
     environment:
-      - TOKEN=${NORDVPN_TOKEN}
-      - COUNTRY=${NORDVPN_COUNTRY:-us}
-      - TECHNOLOGY=${NORDVPN_TECHNOLOGY:-nordlynx}
-      - CATEGORY=${NORDVPN_CATEGORY:-legacy_p2p}
-    restart: unless-stopped
+      TOKEN: ${NORDVPN_TOKEN}
+      COUNTRY: ${NORDVPN_COUNTRY:-us}
+      TECHNOLOGY: ${NORDVPN_TECHNOLOGY:-nordlynx}
+      CATEGORY: ${NORDVPN_CATEGORY:-legacy_p2p}
     networks:
       - scraper_net
+    profiles:
+      - vpn
 
 networks:
   scraper_net:
     driver: bridge
+
+volumes:
+  pgdata:

@@ -52,5 +52,4 @@ def main():
 
 if __name__ == '__main__':
     os.environ.setdefault('PROXY_ENABLED', 'false')
-    os.environ.setdefault('LOG_LEVEL', 'INFO')
     main()

@@ -9,7 +9,7 @@ from utils.request_handler import RequestHandler
 from models.movie_model import Movie, Actor
 
 class IMDBScraper(BaseScraper):
-    def __init__(self, request_handler=None):
+    def __init__(self, request_handler: RequestHandler = None):
         super().__init__()
         self.logger = setup_logger(__name__)
         self.request_handler = request_handler or RequestHandler()
@@ -96,18 +96,18 @@ class IMDBScraper(BaseScraper):
                     )
                     continue
 
-    def _parse_movie_details(self, detail_url: dict, use_proxy: bool, verify_proxy: bool) -> Dict:
-        """Extrae datos de una fila de película"""
+    def _parse_movie_details(self, detail_url: str, use_proxy: bool, verify_proxy: bool) -> Dict:
+        """Extract and parse movie data"""
         json_data = self._get_movie_details(detail_url, use_proxy, verify_proxy)
         try:
             movie_details = json_data["props"]["pageProps"]["mainColumnData"]
             _id = movie_details["id"]
-            runtime = movie_details["runtime"]["seconds"]
-            release_year = movie_details["releaseDate"]["year"]
             title = movie_details["originalTitleText"]["text"]
+            release_year = movie_details["releaseDate"]["year"]
             rating = movie_details["ratingsSummary"]["aggregateRating"]
-            metascore = self.safe_get(json_data, "props", "pageProps", "aboveTheFoldData", "metacritic", "metascore", "score") 
+            runtime = movie_details["runtime"]["seconds"]
             actors = self._parse_actors(movie_details, _id)
+            metascore = self.safe_get(json_data, "props", "pageProps", "aboveTheFoldData", "metacritic", "metascore", "score") 
             return Movie(
                 movie_id=_id,
                 title=title,
