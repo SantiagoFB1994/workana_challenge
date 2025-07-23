@@ -29,8 +29,8 @@ bash
 Copy
 
 # 1. Clone & enter
-git clone <repo-url> imdb-scraper
-cd imdb-scraper
+git clone <repo-url> workana_challenge
+cd workana_challenge
 
 # 2. Configure
 cp .env.example .env          # edit values as needed
@@ -48,7 +48,7 @@ The first build will create PostgreSQL and the scraper containers automatically.
     Python 3.12+ and PostgreSQL (or use the provided Docker Postgres).
     Virtual environment
     bash
-
+#   Run locally
 Copy
 
 python3.12 -m venv venv
